@@ -20,50 +20,87 @@ let vern = {
 	Bihar: 'बिहार',
 	Chhattisgarh: '',
 };
+const usd = {
+	'2003': 46.58,
+	'2004': 45.32,
+	'2005': 44.1,
+	'2006': 45.31,
+	'2007': 41.35,
+	'2008': 43.51,
+	'2009': 48.41,
+	'2010': 45.73,
+	'2011': 46.67,
+	'2012': 53.44,
+	'2013': 56.57,
+	'2014': 62.33,
+	'2015': 62.97,
+	'2016': 66.46,
+	'2017': 67.79,
+	'2018': 70.09,
+};
 let rectSpace;
 let rectHeight;
-let initYear = 1980;
-let speed = 1.0; // 1 year is 5 seconds |
+let allYears;
+let yearNow;
+let yearIndex;
 let progress = 0; // in frameCount
 let yearEntries = [];
 let max = 0;
-let lines = [10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000];
 var Timeline = function(seed) {
+	//Ensure all have the same keys
+	let allPeeps = [];
+	for (yr in seed) {
+		allPeeps = [...new Set([...allPeeps, ...Object.keys(seed[yr])])];
+	}
+	for (yr in seed) {
+		const foreign = allPeeps.filter(v => !(v in seed[yr]));
+		foreign.forEach(v => (seed[yr][v] = ''));
+	}
+	//Convert USD to INR
+	for (yr in seed) {
+		for (person in seed[yr]) {
+			seed[yr][person] = seed[yr][person] * usd[yr];
+		}
+	}
 	this.seed = seed;
 	this.bars = {};
 	this.swaps = [];
-};
-Timeline.prototype.init = function() {
-	numBars = Object.keys(timeline.seed['1980']).length;
-	numBarsToShow = 15;
+
+	allYears = Object.keys(seed).map(v => parseInt(v));
+	yearIndex = 0;
+	yearNow = allYears[yearIndex];
+
+	numBars = Object.keys(seed[yearNow]).length;
 	rectSpace = (height * 0.75) / numBarsToShow;
 	rectHeight = 0.85 * rectSpace;
-	yearEntries = Object.entries(this.seed[initYear]).sort((a, b) => b[1] - a[1]);
+	yearEntries = Object.entries(seed[yearNow]).sort((a, b) => b[1] - a[1]);
 	max = Math.max(...yearEntries.filter(v => !!v[1]).map(v => v[1]));
 	yearEntries.forEach((entry, i) => {
 		let wid = map(entry[1], 0, max, 0, width * 0.8);
-
 		this.bars[i] = new Bar(i, wid, entry[0], entry[1]);
 	});
 };
 
 Timeline.prototype.update = function() {
-	if (initYear >= 2017) return;
-	initYear += 0.005;
-	const currYear = parseInt(initYear);
-	const nextYear = currYear + 1;
-	yearEntries = Object.entries(this.seed[currYear]).map(st => {
-		return [st[0], map(initYear, currYear, nextYear, this.seed[currYear][st[0]], this.seed[nextYear][st[0]])];
-	});
-	max = Math.max(...yearEntries.filter(v => !!v[1]).map(v => v[1]));
+	const currYearIndex = allYears.findIndex(v => v > yearNow) - 1;
+	if (currYearIndex >= 0) {
+		yearNow += speed;
+		const currYear = allYears[currYearIndex];
+		const nextYear = allYears[currYearIndex + 1];
 
-	yearEntries.forEach(entry => {
-		let wid = map(entry[1], 0, max, 0, width * 0.8);
-		let cc = this.getBarByName(entry[0]);
-		cc.val = entry[1];
-		cc.w = wid;
-	});
+		yearEntries = Object.entries(this.seed[currYear]).map(st => {
+			return [st[0], map(yearNow, currYear, nextYear, this.seed[currYear][st[0]], this.seed[nextYear][st[0]])];
+		});
+		//console.log(yearEntries);
+		max = Math.max(...yearEntries.filter(v => !isNaN(v[1])).map(v => Number(v[1])));
 
+		yearEntries.forEach(entry => {
+			let wid = map(entry[1], 0, max, width * 0.15, width * 0.8);
+			let cc = this.getBarByName(entry[0]);
+			cc.val = entry[1];
+			cc.w = wid;
+		});
+	}
 	if (this.swaps.length > 0) {
 		this.swaps.forEach((sw, ind) => {
 			const second = sw[1];
@@ -100,17 +137,19 @@ Timeline.prototype.show = function() {
 	textAlign(CENTER);
 	textSize(30);
 	fill(0);
-	text("India's Top 15 States by GDP Timeline", width / 2 - 60, -0.08 * height);
+	text(projectTitle, width / 2 - 60, -0.08 * height);
 	strokeWeight(1);
 	stroke(210);
 	fill(210);
-	textSize(16);
+	textSize(14);
 	textAlign(LEFT);
+	console.log(max);
 	lines.forEach(li => {
-		if (li > 0.2 * max) {
-			var fue = map(li, 0, max, 0, width * 0.8);
+		if (li.v / 100 > (0.2 * max) / 100) {
+			var fue = map(li.v / 100, 0, max, width * 0.15, width * 0.8);
 			line(fue, -40, fue, height);
-			text(`₹ ${li.toLocaleString('en-IN')} cr`, fue + 10, -20);
+			text(`₹ ${li.v.toLocaleString('en-IN')} cr`, fue + 10, -30);
+			text(`GDP of ${li.l}`, fue + 10, -10);
 		}
 	});
 	noStroke();
@@ -123,10 +162,10 @@ Timeline.prototype.show = function() {
 	textSize(120);
 	fill(80);
 	textAlign(CENTER);
-	text(parseInt(initYear) + 1, width * 0.73, height * 0.71);
+	text(parseInt(yearNow), width * 0.73, height * 0.71);
 	textSize(14);
 	fill(180);
-	text('Source: NITI Aayog | Created by iashris.com', width * 0.73, height * 0.74);
+	text(sourceTitle, width * 0.73, height * 0.74);
 
 	textSize(12);
 };
@@ -157,14 +196,28 @@ Bar.prototype.show = function() {
 	fill(255);
 
 	if (this.index < numBarsToShow) {
-		textAlign(LEFT);
-		text(`${vern[this.name]}`, 20, rectSpace * this.index + rectHeight * 0.65);
+		// textAlign(LEFT);
+		// text(`${vern[this.name]}`, 20, rectSpace * this.index + rectHeight * 0.65);
+
 		textAlign(RIGHT);
-		text(`${this.name}`, this.w - rectHeight / 2, rectSpace * this.index + rectHeight * 0.65);
+		fill(255);
+
+		const company = mapping[this.name];
+		const name = this.name;
+		let nameWidth = textWidth(name);
+		text(name, this.w - rectHeight / 2, rectSpace * this.index + rectHeight * 0.65);
+		textSize(12);
 		textAlign(LEFT);
+
+		let companyWidth = textWidth(company);
+		if (this.w > 1.4 * (companyWidth + nameWidth)) {
+			text(company, rectHeight / 2, rectSpace * this.index + rectHeight * 0.65);
+		}
+		textSize(16);
+
 		fill(0);
 		text(
-			`₹ ${parseInt(this.val).toLocaleString('en-IN')} cr`,
+			`₹ ${parseInt(this.val * 100).toLocaleString('en-IN')} cr`,
 			this.w + rectHeight / 2,
 			rectSpace * this.index + rectHeight * 0.65,
 		);
