@@ -1,8 +1,8 @@
-const projectTitle = 'Top 15 Cricketers By ODI Runs';
-const sourceTitle = 'Source: Howstats.com | Created by iashris.com';
-const speed = 0.01;
+const projectTitle = 'Top 15 Indians By Net Worth (2003-2018)';
+const sourceTitle = 'Source: Forbes | Created by iashris.com';
+const speed = 0.002;
 const rec = true;
-const numBarsToShow = 35;
+const numBarsToShow = 15;
 let lines = [
 	{
 		v: 18000,

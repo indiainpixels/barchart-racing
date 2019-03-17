@@ -54,13 +54,7 @@ var Timeline = function(seed) {
 	}
 	for (yr in seed) {
 		const foreign = allPeeps.filter(v => !(v in seed[yr]));
-		foreign.forEach(v => (seed[yr][v] = ''));
-	}
-	//Convert USD to INR
-	for (yr in seed) {
-		for (person in seed[yr]) {
-			seed[yr][person] = seed[yr][person] * usd[yr];
-		}
+		foreign.forEach(v => (seed[yr][v] = { runs: 0 }));
 	}
 	this.seed = seed;
 	this.bars = {};
@@ -73,11 +67,12 @@ var Timeline = function(seed) {
 	numBars = Object.keys(seed[yearNow]).length;
 	rectSpace = (height * 0.75) / numBarsToShow;
 	rectHeight = 0.85 * rectSpace;
-	yearEntries = Object.entries(seed[yearNow]).sort((a, b) => b[1] - a[1]);
-	max = Math.max(...yearEntries.filter(v => !!v[1]).map(v => v[1]));
+	yearEntries = Object.entries(seed[yearNow]).sort((a, b) => b[1].runs - a[1].runs);
+	max = Math.max(...yearEntries.filter(v => !!v[1]).map(v => v[1].runs));
+
 	yearEntries.forEach((entry, i) => {
-		let wid = map(entry[1], 0, max, 0, width * 0.8);
-		this.bars[i] = new Bar(i, wid, entry[0], entry[1]);
+		let wid = map(entry[1].runs, 0, max, 0, width * 0.8);
+		this.bars[i] = new Bar(i, wid, entry[0], entry[1].runs);
 	});
 };
 
@@ -89,48 +84,125 @@ Timeline.prototype.update = function() {
 		const nextYear = allYears[currYearIndex + 1];
 
 		yearEntries = Object.entries(this.seed[currYear]).map(st => {
-			return [st[0], map(yearNow, currYear, nextYear, this.seed[currYear][st[0]], this.seed[nextYear][st[0]])];
+			return [
+				st[0],
+				Number(
+					map(yearNow, currYear, nextYear, this.seed[currYear][st[0]].runs || 0, this.seed[nextYear][st[0]].runs || 0),
+				),
+			];
 		});
 		//console.log(yearEntries);
 		max = Math.max(...yearEntries.filter(v => !isNaN(v[1])).map(v => Number(v[1])));
+		//console.log(this.swaps.length);
+		// noLoop();
+		// return;
+		//this should happen only for like top 50 -- sort then forEach?
+		yearEntries
+			.sort((a, b) => b[1] - a[1])
+			.forEach((entry, index) => {
+				let cc = this.getBarByName(entry[0]);
+				cc.sorted = index;
 
-		yearEntries.forEach(entry => {
-			let wid = map(entry[1], 0, max, width * 0.15, width * 0.8);
-			let cc = this.getBarByName(entry[0]);
-			cc.val = entry[1];
-			cc.w = wid;
-		});
+				let wid = map(entry[1], 0, max, width * 0.15, width * 0.8);
+				cc.val = entry[1];
+				cc.w = wid;
+			});
+		// console.log(frameCount);
+		// if (frameCount == 300) {
+		// 	console.log(this.bars);
+		// 	noLoop();
+		// 	return;
+		// }
 	}
 	if (this.swaps.length > 0) {
 		this.swaps.forEach((sw, ind) => {
-			const second = sw[1];
-			const first = sw[0];
-			this.bars[second].index -= 0.075;
-			this.bars[first].index += 0.075;
-			if (abs(this.bars[first].index - first) > 1) {
-				this.bars[first].index = second;
-				this.bars[second].index = first;
+			const movetoIndex = sw[1];
+			const toMoveIndex = sw[2];
+			const moveeName = sw[0];
+			const movee = this.getBarByName(moveeName);
 
-				var temp = this.bars[second];
-				this.bars[second] = this.bars[first];
-				this.bars[first] = temp;
-				this.swaps.splice(ind, 1);
+			movee.index -= 0.075;
+			//console.log(toMoveIndex);
+			const buddy = this.bars[toMoveIndex];
+			buddy.index += 0.075;
+
+			if (abs(buddy.index - toMoveIndex) > 1) {
+				movee.index = toMoveIndex;
+				buddy.index++;
+				var temp = this.bars[toMoveIndex];
+				this.bars[toMoveIndex] = this.bars[toMoveIndex + 1];
+				this.bars[toMoveIndex + 1] = temp;
+
+				const newtoMove = toMoveIndex - 1;
+				if (newtoMove === -1 || newtoMove === movetoIndex - 1) {
+					this.swaps.splice(ind, 1);
+				} else {
+					this.swaps[index][2] = newtoMove;
+				}
 			}
+			//If these are visual bars, do the incremental thing, else just flip
+			// if (this.bars[first].index > 20 && this.bars[second].index > 20) {
+			// 	this.bars[first].index = second;
+			// 	this.bars[second].index = first;
+			// 	var temp = this.bars[second];
+			// 	this.bars[second] = this.bars[first];
+			// 	this.bars[first] = temp;
+			// 	this.swaps.splice(ind, 1);
+			// } else {
+
+			// this.bars[second].index -= 0.075;
+			// this.bars[first].index += 0.075;
+			// if (abs(this.bars[first].index - first) > second - first) {
+			// 	this.bars[first].index = second;
+			// 	this.bars[second].index = first;
+			// 	var temp = this.bars[second];
+			// 	this.bars[second] = this.bars[first];
+			// 	this.bars[first] = temp;
+			// 	this.swaps.splice(ind, 1);
+			// }
+			//}
 		});
 	} else {
 		var i = 0;
 		while (i < numBars - 1) {
 			let me = this.bars[i];
-			let him = this.bars[i + 1];
 
-			if (him.w > me.w) {
-				this.swaps.push([i, i + 1]);
-				i += 2;
-			} else {
-				i += 1;
+			//Find the element with lower index which is actually smaller than me
+			let himindex = i - 1;
+			while (himindex >= 0) {
+				if (this.bars[himindex].w > me.w) {
+					himindex = himindex + 1;
+					break;
+				}
+				himindex--;
 			}
+
+			if (himindex != i && himindex != -1) {
+				this.swaps.push([me.name, himindex, i - 1]);
+			}
+			i++;
+			// const himindex = this.bars.findIndex((v, ii) => ii < i && v.w > me.w);
+
+			// let him = this.bars[him];
+			// if (him.w > me.w) {
+			// 	this.swaps.push([i, i + 1]);
+			// 	i += 2;
+			// } else {
+			// 	i += 1;
+			// }
 		}
+		// Agar bar ka sorted value and index value are both above 25, set index as sorted,
 	}
+	// for (barindex in this.bars) {
+	// 	bar = this.bars[barindex];
+	// 	if (bar.index > 25 && bar.sorted > 25) {
+	// 		bar.index = bar.sorted;
+
+	// 		var temp = this.bars[bar.sorted];
+	// 		this.bars[bar.sorted] = bar;
+	// 		this.bars[barindex] = temp;
+	// 	}
+	// }
 };
 Timeline.prototype.show = function() {
 	background('white');
@@ -143,19 +215,19 @@ Timeline.prototype.show = function() {
 	fill(210);
 	textSize(14);
 	textAlign(LEFT);
-	console.log(max);
-	lines.forEach(li => {
-		if (li.v / 100 > (0.2 * max) / 100) {
-			var fue = map(li.v / 100, 0, max, width * 0.15, width * 0.8);
-			line(fue, -40, fue, height);
-			text(`₹ ${li.v.toLocaleString('en-IN')} cr`, fue + 10, -30);
-			text(`GDP of ${li.l}`, fue + 10, -10);
-		}
-	});
+	// lines.forEach(li => {
+	// 	if (li.v / 100 > (0.2 * max) / 100) {
+	// 		var fue = map(li.v / 100, 0, max, width * 0.15, width * 0.8);
+	// 		line(fue, -40, fue, height);
+	// 		text(`₹ ${li.v.toLocaleString('en-IN')} cr`, fue + 10, -30);
+	// 		text(`GDP of ${li.l}`, fue + 10, -10);
+	// 	}
+	// });
 	noStroke();
 
 	for (var i = 0; i < numBars; i++) {
 		let thisbar = this.bars[i];
+		//if (i < 20) thisbar.show();
 		thisbar.show();
 	}
 	// this.getBarByName('Bihar').update();
@@ -184,13 +256,16 @@ var Bar = function(i, dna, name, val) {
 	this.moveTrigger = false;
 	this.moveTo = i;
 	this.val = val;
+	this.sorted = i;
 };
 
 Bar.prototype.show = function() {
 	// if (this.index > numBarsToShow - 1) fill(`rgba(255, 0, 0, )`);
-	fill(
-		`rgba(${this.r},${this.g},${this.b},${constrain(map(this.index, numBarsToShow - 1, numBarsToShow, 1, 0), 0, 1)})`,
-	);
+	// fill(
+	// 	`rgba(${this.r},${this.g},${this.b},${constrain(map(this.index, numBarsToShow - 1, numBarsToShow, 1, 0), 0, 1)})`,
+	// );
+	if (this.index > 25) fill(255, 0, 0);
+	else fill(0, 255, 0);
 	textSize(16);
 	rect(0, rectSpace * this.index, this.w, rectHeight);
 	fill(255);
@@ -202,22 +277,18 @@ Bar.prototype.show = function() {
 		textAlign(RIGHT);
 		fill(255);
 
-		const company = mapping[this.name];
 		const name = this.name;
-		let nameWidth = textWidth(name);
 		text(name, this.w - rectHeight / 2, rectSpace * this.index + rectHeight * 0.65);
 		textSize(12);
 		textAlign(LEFT);
 
-		let companyWidth = textWidth(company);
-		if (this.w > 1.4 * (companyWidth + nameWidth)) {
-			text(company, rectHeight / 2, rectSpace * this.index + rectHeight * 0.65);
-		}
 		textSize(16);
 
 		fill(0);
 		text(
-			`₹ ${parseInt(this.val * 100).toLocaleString('en-IN')} cr`,
+			//changed here
+			//TODO
+			`${parseInt(this.index).toLocaleString('en-IN')}`,
 			this.w + rectHeight / 2,
 			rectSpace * this.index + rectHeight * 0.65,
 		);

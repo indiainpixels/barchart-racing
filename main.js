@@ -1,10 +1,10 @@
 p5.disableFriendlyErrors = true;
 let data, timeline, colss;
 function preload() {
-	data = loadJSON('forbes.json');
+	data = loadJSON('players.json');
 	colss = randomColor({
 		luminosity: 'dark',
-		count: 200,
+		count: 600,
 		format: 'rgbArray',
 		hue: 'random',
 	});
@@ -12,6 +12,7 @@ function preload() {
 function setup() {
 	textFont('Roboto');
 	smooth();
+	frameRate(300);
 	const parent = document.getElementById('canvas');
 	const canvas = createCanvas(innerWidth, innerHeight);
 	canvas.parent(parent);
