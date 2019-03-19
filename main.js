@@ -1,7 +1,7 @@
 p5.disableFriendlyErrors = true;
 let data, timeline, colss;
 function preload() {
-	data = loadJSON('players.json');
+	data = loadJSON('gdp_per_cap.json');
 	colss = randomColor({
 		luminosity: 'dark',
 		count: 600,
