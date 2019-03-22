@@ -7,21 +7,57 @@ let yearIndex;
 let progress = 0; // in frameCount
 let yearEntries = [];
 let max = 0;
-
-var Timeline = function(seed) {
-	//Ensure all have the same keys
-	let allPeeps = [];
-	for (yr in seed) {
-		allPeeps = [...new Set([...allPeeps, ...Object.keys(seed[yr])])];
+var topOfThisYr = function(obj) {
+	return Object.entries(obj)
+		.sort((a, b) => b[1] - a[1])
+		.slice(0, 30)
+		.map(v => v[0]);
+};
+var topOfThisYrObj = function(obj) {
+	var toRet = {};
+	Object.entries(obj)
+		.sort((a, b) => b[1] - a[1])
+		.slice(0, 30)
+		.forEach(v => {
+			toRet[v[0]] = v[1];
+		});
+	return toRet;
+};
+var topperify = function(sd) {
+	var toRet = {};
+	for (yr in sd) {
+		const result = topOfThisYrObj(sd[yr]);
+		toRet[yr] = result;
 	}
-	for (yr in seed) {
-		const foreign = allPeeps.filter(v => !(v in seed[yr]));
+	return toRet;
+};
+var Timeline = function(seedx) {
+	//Ensure all have the same keys
+	var mseed = topperify(seedx);
+	let allPeeps = [];
+	for (yr in mseed) {
+		allPeeps = [...new Set([...allPeeps, ...Object.keys(mseed[yr])])];
+	}
+	for (yr in mseed) {
+		const foreign = allPeeps.filter(v => !(v in mseed[yr]));
 		foreign.forEach(v => {
-			seed[yr][v] = 0;
+			mseed[yr][v] = 0;
 		});
 	}
+	seed = {};
+	for (yr in mseed) {
+		if (!(yr in seed)) seed[yr] = {};
+		for (player in mseed[yr]) {
+			seed[yr][player] = {
+				val: mseed[yr][player],
+				country: aadhar[player]['country'],
+			};
+		}
+	}
+
 	this.primeColor = null;
 	this.seed = seed;
+	this.emoji = null;
 	this.bars = {};
 	this.swaps = [];
 
@@ -32,11 +68,11 @@ var Timeline = function(seed) {
 	numBars = Object.keys(seed[yearNow]).length;
 	rectSpace = (height * 0.75) / numBarsToShow;
 	rectHeight = 0.85 * rectSpace;
-	yearEntries = Object.entries(seed[yearNow]).sort((a, b) => b[1] - a[1]);
-	max = Math.max(...yearEntries.filter(v => !!v[1]).map(v => v[1]));
+	yearEntries = Object.entries(seed[yearNow]).sort((a, b) => b[1].val - a[1].val);
+	max = Math.max(...yearEntries.filter(v => !!v[1].val).map(v => v[1].val));
 
 	yearEntries.forEach((entry, i) => {
-		let wid = map(entry[1], 0, max, 0, width * 0.8);
+		let wid = map(entry[1].val, 0, max, 0, width * 0.8);
 		this.bars[i] = new Bar(i, wid, entry[0], entry[1]);
 	});
 };
@@ -51,7 +87,9 @@ Timeline.prototype.update = function() {
 		yearEntries = Object.entries(this.seed[currYear]).map(st => {
 			return [
 				st[0],
-				Number(map(yearNow, currYear, nextYear, this.seed[currYear][st[0]] || 0, this.seed[nextYear][st[0]] || 0)),
+				Number(
+					map(yearNow, currYear, nextYear, this.seed[currYear][st[0]].val || 0, this.seed[nextYear][st[0]].val || 0),
+				),
 			];
 		});
 		//console.log(yearEntries);
@@ -137,14 +175,14 @@ Timeline.prototype.show = function() {
 	textFont('Lato');
 	strokeWeight(1);
 	stroke(210);
-	fill(210);
+	fill(170);
 	textSize(15);
 	textAlign(LEFT);
 	lines.forEach(li => {
 		if (li.v > 0.2 * max) {
 			var fue = map(li.v, 0, max, 0, width * 0.8);
 			line(fue, -30, fue, height);
-			text(`₹ ${li.v.toLocaleString('en-IN')}`, fue + 10, -10);
+			text(`${li.v.toLocaleString('en-IN')}`, fue + 10, -10);
 			//text(`${li.l}`, fue + 10, -10);
 		}
 	});
@@ -154,45 +192,52 @@ Timeline.prototype.show = function() {
 		if (i < numBarsToShow) thisbar.show();
 		//thisbar.show();
 	}
-	textSize(120);
 	fill(this.primeColor);
 	textAlign(CENTER);
-	text(parseInt(yearNow), width * 0.73, height * 0.69);
+	textSize(200);
+	text(this.emoji, width * 0.73, height * 0.53);
+	textSize(120);
+	text(parseInt(yearNow), width * 0.73, height * 0.63);
 	// rect(width * 0.7, height * 0.705, , 10));
 	const maxw = textWidth('1993') * 1.15;
 	const ww = map(yearNow - parseInt(yearNow), 0, 1, 0, maxw);
 	fill(230);
-	rect(width * 0.625, height * 0.705, maxw, 6);
+	rect(width * 0.625, height * 0.64, maxw, 6);
 	fill(this.primeColor);
-	rect(width * 0.625, height * 0.705, ww, 6);
-	textSize(14);
-	fill(180);
-	text(sourceTitle, width * 0.73, height * 0.74);
-
+	rect(width * 0.625, height * 0.64, ww, 6);
+	image(subscribe, width * 0.655, height * 0.7, subscribe.width * 0.7, subscribe.height * 0.7);
+	textSize(18);
+	fill(150);
+	textFont('Roboto-Bold');
+	text(sourceTitle, width * 0.73, height * 0.68);
 	textSize(12);
 };
 Timeline.prototype.getBarByName = function(name) {
 	return this.bars[Object.entries(this.bars).find(cmplx => cmplx[1].name == name)[0]];
 };
 
-var Bar = function(i, dna, name, val, nation) {
+var Bar = function(i, dna, name, entity) {
 	this.w = dna;
 	this.name = name;
 	this.index = i;
+	const countryCol = mapping[entity.country].color;
+	this.r = countryCol[0];
+	this.g = countryCol[1];
+	this.b = countryCol[2];
+	this.emoji = mapping[entity.country].emoji;
 
-	this.r = colss[i][0];
-	this.g = colss[i][1];
-	this.b = colss[i][2];
-
-	this.val = val;
-	this.country = nation;
+	this.val = entity.val;
+	this.country = entity.country;
 };
 
 Bar.prototype.show = function() {
 	fill(
 		`rgba(${this.r},${this.g},${this.b},${constrain(map(this.index, numBarsToShow - 1, numBarsToShow, 1, 0), 0, 1)})`,
 	);
-	if (this.index === 0) timeline.primeColor = `rgb(${this.r},${this.g},${this.b})`;
+	if (this.index === 0) {
+		timeline.primeColor = `rgb(${this.r},${this.g},${this.b})`;
+		timeline.emoji = this.emoji;
+	}
 	rect(0, rectSpace * this.index, this.w, rectHeight);
 	fill(255);
 
@@ -206,23 +251,24 @@ Bar.prototype.show = function() {
 
 		textAlign(LEFT);
 		textSize(18);
-		//if (textWidth(this.country) + textWidth(name) < 0.6 * this.w)
-		// fill(
-		// 	`rgba(255,255,255,${constrain(
-		// 		map(textWidth(this.country) + textWidth(name), 0.5 * this.w, 0.8 * this.w, 1, 0),
-		// 		0,
-		// 		1,
-		// 	)})`,
-		// );
-		//text(`${this.country}`, 20, rectSpace * this.index + rectHeight * 0.65);
 
+		fill(
+			`rgba(255,255,255,${constrain(
+				map(textWidth(this.country) + textWidth(name), 0.5 * this.w, 0.8 * this.w, 1, 0),
+				0,
+				1,
+			)})`,
+		);
+		text(`${this.country}`, 20, rectSpace * this.index + rectHeight * 0.65);
+		//textSize(190);
+		//text(this.emoji, -35, rectSpace * this.index + rectHeight);
 		textSize(16);
 
 		fill(0);
 		text(
 			//changed here
 			//TODO
-			`₹ ${parseInt(this.val).toLocaleString('en-IN')}`,
+			`${parseInt(this.val).toLocaleString('en-IN')}`,
 			this.w + rectHeight / 2,
 			rectSpace * this.index + rectHeight * 0.65,
 		);

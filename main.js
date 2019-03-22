@@ -1,7 +1,9 @@
 p5.disableFriendlyErrors = true;
-let data, timeline, colss;
+let data, timeline, colss, subscribe;
 function preload() {
-	data = loadJSON('gdp_per_cap.json');
+	data = loadJSON('Final-ODI-Bowling-data.json');
+	aadhar = loadJSON('scrape_cricket/namesx.json');
+	subscribe = loadImage('subscribe.png');
 	colss = randomColor({
 		luminosity: 'dark',
 		count: 600,
