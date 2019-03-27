@@ -1,4 +1,4 @@
-const projectTitle = 'Top 15 Cricketers by Cumulative ODI Wickets Taken';
+const projectTitle = 'Top 15 Cricketers by Cumulative Test Wickets';
 const sourceTitle = 'Source: Howstat.com | Created by iashris.com';
 const speed = 0.005;
 const rec = true;

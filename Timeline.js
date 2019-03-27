@@ -248,10 +248,15 @@ Bar.prototype.show = function() {
 		textSize(21);
 		const name = this.name;
 		text(name, this.w - rectHeight / 2, rectSpace * this.index + rectHeight * 0.65);
+		textSize(14);
+		textAlign(CENTER);
 
+		fill(255, 255, 0);
+		ellipse(-34, rectSpace * this.index + rectHeight * 0.55, 30, 30);
+		fill(0);
 		textAlign(LEFT);
-		textSize(18);
 
+		text(parseInt(this.index) + 1, -40, rectSpace * this.index + rectHeight * 0.65);
 		fill(
 			`rgba(255,255,255,${constrain(
 				map(textWidth(this.country) + textWidth(name), 0.5 * this.w, 0.8 * this.w, 1, 0),
@@ -259,6 +264,7 @@ Bar.prototype.show = function() {
 				1,
 			)})`,
 		);
+		textSize(18);
 		text(`${this.country}`, 20, rectSpace * this.index + rectHeight * 0.65);
 		//textSize(190);
 		//text(this.emoji, -35, rectSpace * this.index + rectHeight);
