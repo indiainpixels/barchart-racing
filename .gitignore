@@ -1,4 +1,6 @@
 raw/
 .vscode/
 .ipynb_checkpoints/
-scrape_cricket
+scrape_*
+js-libs
+socialblade

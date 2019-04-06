@@ -41,7 +41,7 @@ var Timeline = function(seedx) {
 	for (yr in mseed) {
 		const foreign = allPeeps.filter(v => !(v in mseed[yr]));
 		foreign.forEach(v => {
-			mseed[yr][v] = 0;
+			mseed[yr][v] = seedx[yr][v];
 		});
 	}
 	seed = {};
