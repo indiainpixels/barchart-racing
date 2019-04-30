@@ -1,79 +1,26 @@
-let numBars;
-let rectSpace;
-let rectHeight;
-let allYears;
-let yearNow;
-let yearIndex;
-let progress = 0; // in frameCount
-let yearEntries = [];
-let max = 0;
-var topOfThisYr = function(obj) {
-	return Object.entries(obj)
-		.sort((a, b) => b[1] - a[1])
-		.slice(0, 30)
-		.map(v => v[0]);
-};
-var topOfThisYrObj = function(obj) {
-	var toRet = {};
-	Object.entries(obj)
-		.sort((a, b) => b[1] - a[1])
-		.slice(0, 30)
-		.forEach(v => {
-			toRet[v[0]] = v[1];
-		});
-	return toRet;
-};
-var topperify = function(sd) {
-	var toRet = {};
-	for (yr in sd) {
-		const result = topOfThisYrObj(sd[yr]);
-		toRet[yr] = result;
-	}
-	return toRet;
-};
 var Timeline = function(seedx) {
-	//Ensure all have the same keys
-	var mseed = topperify(seedx);
-	let allPeeps = [];
-	for (yr in mseed) {
-		allPeeps = [...new Set([...allPeeps, ...Object.keys(mseed[yr])])];
-	}
-	for (yr in mseed) {
-		const foreign = allPeeps.filter(v => !(v in mseed[yr]));
-		foreign.forEach(v => {
-			mseed[yr][v] = seedx[yr][v];
-		});
-	}
-	seed = {};
-	for (yr in mseed) {
-		if (!(yr in seed)) seed[yr] = {};
-		for (player in mseed[yr]) {
-			seed[yr][player] = {
-				val: mseed[yr][player],
-				country: aadhar[player]['country'],
-			};
-		}
-	}
-
+	//seedx is a year wise hash: {1951:{A:2,B:3,C:8}, 1962:{A:8,B:11, C:43}}
+	const seed = sanitize(seedx);
 	this.primeColor = null;
 	this.seed = seed;
 	this.emoji = null;
 	this.bars = {};
 	this.swaps = [];
+	this.init();
+};
 
-	allYears = Object.keys(seed).map(v => parseInt(v));
+Timeline.prototype.init = function() {
 	yearIndex = 0;
+	allYears = Object.keys(this.seed).map(yearString => parseInt(yearString));
 	yearNow = allYears[yearIndex];
-
-	numBars = Object.keys(seed[yearNow]).length;
+	numBars = Object.keys(this.seed[yearNow]).length;
 	rectSpace = (height * 0.75) / numBarsToShow;
 	rectHeight = 0.85 * rectSpace;
-	yearEntries = Object.entries(seed[yearNow]).sort((a, b) => b[1].val - a[1].val);
+	yearEntries = Object.entries(this.seed[yearNow]).sort((a, b) => b[1].val - a[1].val);
 	max = Math.max(...yearEntries.filter(v => !!v[1].val).map(v => v[1].val));
-
-	yearEntries.forEach((entry, i) => {
-		let wid = map(entry[1].val, 0, max, 0, width * 0.8);
-		this.bars[i] = new Bar(i, wid, entry[0], entry[1]);
+	yearEntries.forEach((entry, index) => {
+		let wid = map(entry[1].val, 0, max, width * zeroBarOffset, width * fullMaxVal);
+		this.bars[index] = new Bar(index, wid, entry[0], entry[1]);
 	});
 };
 
@@ -96,7 +43,7 @@ Timeline.prototype.update = function() {
 		max = Math.max(...yearEntries.filter(v => !isNaN(v[1])).map(v => Number(v[1])));
 		yearEntries.forEach((entry, index) => {
 			let cc = this.getBarByName(entry[0]);
-			let wid = map(entry[1], 0, max, 0, width * 0.8);
+			let wid = map(entry[1], 0, max, width * zeroBarOffset, width * fullMaxVal);
 			cc.val = entry[1];
 			cc.w = wid;
 			// if (index > numBarsToShow && cc.index > numBarsToShow) {
@@ -166,13 +113,12 @@ Timeline.prototype.update = function() {
 	}
 };
 Timeline.prototype.show = function() {
-	textFont('Karma');
-	background('white');
+	textFont('GraphikBold');
 	textAlign(CENTER);
 	textSize(38);
 	fill(0);
 	text(projectTitle, width / 2 - 60, -0.06 * height);
-	textFont('Lato');
+	textFont('Graphik');
 	strokeWeight(1);
 	stroke(210);
 	fill(170);
@@ -180,7 +126,7 @@ Timeline.prototype.show = function() {
 	textAlign(LEFT);
 	lines.forEach(li => {
 		if (li.v > 0.2 * max) {
-			var fue = map(li.v, 0, max, 0, width * 0.8);
+			var fue = map(li.v, 0, max, width * zeroBarOffset, width * fullMaxVal);
 			line(fue, -30, fue, height);
 			text(`${li.v.toLocaleString('en-IN')}`, fue + 10, -10);
 			//text(`${li.l}`, fue + 10, -10);
@@ -208,7 +154,7 @@ Timeline.prototype.show = function() {
 	image(subscribe, width * 0.655, height * 0.7, subscribe.width * 0.7, subscribe.height * 0.7);
 	textSize(18);
 	fill(150);
-	textFont('Roboto-Bold');
+	textFont('GraphikBold');
 	text(sourceTitle, width * 0.73, height * 0.68);
 	textSize(12);
 };
@@ -216,18 +162,27 @@ Timeline.prototype.getBarByName = function(name) {
 	return this.bars[Object.entries(this.bars).find(cmplx => cmplx[1].name == name)[0]];
 };
 
-var Bar = function(i, dna, name, entity) {
-	this.w = dna;
-	this.name = name;
-	this.index = i;
-	const countryCol = mapping[entity.country].color;
-	this.r = countryCol[0];
-	this.g = countryCol[1];
-	this.b = countryCol[2];
-	this.emoji = mapping[entity.country].emoji;
-
+var Bar = function(i, assigned_width, name, entity) {
+	//entity is {val: 43, team:'XYZ'}
 	this.val = entity.val;
-	this.country = entity.country;
+	this.team = entity.team;
+
+	this.index = i;
+	this.w = assigned_width;
+	this.name = name;
+
+	// Assign 😏😍🇮🇳 if present in mapping
+	this.emoji = mapping[this.team].emoji;
+
+	let pickedCol;
+	if (shouldAssignIdentity) {
+		pickedCol = mapping[this.team].color;
+	} else {
+		pickedCol = randomColors[this.index];
+	}
+	this.r = pickedCol[0];
+	this.g = pickedCol[1];
+	this.b = pickedCol[2];
 };
 
 Bar.prototype.show = function() {
@@ -244,39 +199,24 @@ Bar.prototype.show = function() {
 	if (this.index < numBarsToShow) {
 		textAlign(RIGHT);
 		fill(255);
-
-		textSize(21);
-		const name = this.name;
-		text(name, this.w - rectHeight / 2, rectSpace * this.index + rectHeight * 0.65);
-		textSize(14);
-		textAlign(CENTER);
-
-		fill(255, 255, 0);
-		ellipse(-34, rectSpace * this.index + rectHeight * 0.55, 30, 30);
-		fill(0);
-		textAlign(LEFT);
-
-		text(parseInt(this.index) + 1, -40, rectSpace * this.index + rectHeight * 0.65);
-		fill(
-			`rgba(255,255,255,${constrain(
-				map(textWidth(this.country) + textWidth(name), 0.5 * this.w, 0.8 * this.w, 1, 0),
-				0,
-				1,
-			)})`,
-		);
 		textSize(18);
-		text(`${this.country}`, 20, rectSpace * this.index + rectHeight * 0.65);
+		const name = this.name;
+		text(name, this.w - rectHeight / 2, rectSpace * this.index + rectHeight * 0.7);
+
+		textAlign(LEFT);
+		if (shouldAssignIdentity && shouldShowIdentity) {
+			textSize(14);
+			// Opacity depends on the width of bar. If it is short, the teamName wont be shown.
+			const opacity = constrain(map(textWidth(this.team) + textWidth(name), 0.5 * this.w, 0.8 * this.w, 1, 0), 0, 1);
+			fill(`rgba(255,255,255,${opacity})`);
+			text(`${this.team}`, 20, rectSpace * this.index + rectHeight * 0.65);
+		}
+
 		//textSize(190);
 		//text(this.emoji, -35, rectSpace * this.index + rectHeight);
 		textSize(16);
-
+		const barValueToShow = `${parseInt(this.val).toLocaleString('en-IN')}`;
 		fill(0);
-		text(
-			//changed here
-			//TODO
-			`${parseInt(this.val).toLocaleString('en-IN')}`,
-			this.w + rectHeight / 2,
-			rectSpace * this.index + rectHeight * 0.65,
-		);
+		text(barValueToShow, this.w + rectHeight / 2, rectSpace * this.index + rectHeight * 0.65);
 	}
 };

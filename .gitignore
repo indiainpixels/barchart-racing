@@ -4,3 +4,6 @@ raw/
 scrape_*
 js-libs
 socialblade
+missindias
+missworlds
+.gitignore

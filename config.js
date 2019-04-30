@@ -1,8 +1,32 @@
-const projectTitle = 'Top 15 Cricketers by Cumulative Test Wickets';
+const projectTitle = 'Top 20 Batsmen Ranked by Total 50s in Test Matches';
 const sourceTitle = 'Source: Howstat.com | Created by iashris.com';
-const speed = 0.005;
+// Data needs to be a hashmap of {year1:{a:aval1, b:bval1}, year2:{a:aval2, b:bval2}}
+// Aadhar is just a file that contains direct name wise mapping of entitites to a group
+// So that would be like {a:{name:'Pikachu'},{'b':'Charmander'}}
+const dataSource = 'data.json';
+const aadhaarSource = 'scrape_cricket/namesxi-test.json';
+
+const speed = 0.0035;
 const rec = true;
-const numBarsToShow = 15;
+const numBarsToShow = 20;
+const toShowWatermark = true;
+
+// How far from 0 should the bars begin
+const zeroBarOffset = 0.2;
+
+//What percentage of width should be the max
+const fullMaxVal = 0.7;
+
+const shouldAssignIdentity = true;
+let keyInAadhaarObject = null;
+if (shouldAssignIdentity) {
+	//This mapping should exist in aadhaar.
+	//{Sachin Tendulkar : {country: 'India'}}
+	shouldShowIdentity = true;
+	keyInAadhaarObject = 'country';
+	shouldUseEmoji = true;
+}
+
 let lines = [
 	{
 		v: 10,
@@ -29,45 +53,3 @@ let lines = [
 		l: 'Bhutan',
 	},
 ];
-const mapping = {
-	England: {
-		color: [255, 0, 0],
-		emoji: '🇬🇧',
-	},
-	Australia: {
-		color: [200, 160, 31],
-		emoji: '🇦🇺',
-	},
-	'West Indies': {
-		color: [170, 0, 64],
-		emoji: '🏝',
-	},
-	'New Zealand': {
-		color: [0, 0, 0],
-		emoji: '🇳🇿',
-	},
-	Pakistan: {
-		color: [0, 102, 0],
-		emoji: '🇵🇰',
-	},
-	India: {
-		color: [0, 128, 228],
-		emoji: '🇮🇳',
-	},
-	'Sri Lanka': {
-		color: [67, 72, 138],
-		emoji: '🇱🇰',
-	},
-	Zimbabwe: {
-		color: [255, 0, 0],
-		emoji: '🇿🇼',
-	},
-	'South Africa': {
-		color: [29, 64, 51],
-		emoji: '🇿🇦',
-	},
-	Bangladesh: {
-		color: [0, 134, 60],
-		emoji: '🇧🇩',
-	},
-};
