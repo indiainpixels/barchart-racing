@@ -40,4 +40,12 @@ const mapping = {
 		color: [0, 134, 60],
 		emoji: '🇧🇩',
 	},
+	Ireland: {
+		color: [11, 193, 127],
+		emoji: '🇮🇪',
+	},
+	Afghanistan: {
+		color: [70, 154, 70],
+		emoji: '🇦🇫',
+	},
 };

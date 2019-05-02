@@ -172,6 +172,7 @@ var Bar = function(i, assigned_width, name, entity) {
 	this.name = name;
 
 	// Assign 😏😍🇮🇳 if present in mapping
+	console.log(this.team);
 	this.emoji = mapping[this.team].emoji;
 
 	let pickedCol;
