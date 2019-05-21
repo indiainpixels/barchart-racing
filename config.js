@@ -6,9 +6,9 @@ const sourceTitle = 'Source: Howstat.com | Created by iashris.com';
 const dataSource = 'data.json';
 const aadhaarSource = 'scrape_cricket/namesxi-t20.json';
 
-const speed = 0.002;
+const speed = 0.007;
 const rec = true;
-const numBarsToShow = 20;
+const numBarsToShow = 21;
 const toShowWatermark = true;
 
 // How far from 0 should the bars begin
@@ -17,7 +17,7 @@ const zeroBarOffset = 0.2;
 //What percentage of width should be the max
 const fullMaxVal = 0.7;
 
-const shouldAssignIdentity = true;
+const shouldAssignIdentity = false;
 let keyInAadhaarObject = null;
 if (shouldAssignIdentity) {
 	//This mapping should exist in aadhaar.

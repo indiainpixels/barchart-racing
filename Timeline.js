@@ -173,13 +173,13 @@ var Bar = function(i, assigned_width, name, entity) {
 
 	// Assign 😏😍🇮🇳 if present in mapping
 	console.log(this.team);
-	this.emoji = mapping[this.team].emoji;
+	//this.emoji = mapping[this.team].emoji;
 
 	let pickedCol;
 	if (shouldAssignIdentity) {
 		pickedCol = mapping[this.team].color;
 	} else {
-		pickedCol = randomColors[this.index];
+		pickedCol = [0, 0, 0];
 	}
 	this.r = pickedCol[0];
 	this.g = pickedCol[1];
