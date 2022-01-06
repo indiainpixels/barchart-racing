@@ -1,5 +1,7 @@
 # India in Pixels Bar Chart Racing
 
+![cover](./cover.jpg)
+
 For over two years, this nifty code base powered India in Pixels' [YouTube channel](https://youtube.com/indiainpixels) with videos fetching over millions of views in cricket, economy and culture.
 
 ## How to use it?
