@@ -22,6 +22,10 @@ If this codebase helps you in any form, you can support IIP via UPI: indiainpixe
 
 Open sourced under MIT License
 
+## Request for collaborators
+
+The code so far was used for personal use, so it is written in a well, haphazard fashion. If you are interested in improving the code quality, you are most welcome to fork the repo and submit a Pull Request.
+
 ## Authors
 
 [Ashris](https://iashris.com)
