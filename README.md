@@ -16,7 +16,7 @@ The project uses the wonderful [p5.js](https://p5js.org/) to do most of the visu
 
 I feel India in Pixels has received a lot of love and support from its community. It has grown thanks to the open source data that several government and private organisations have made freely available. Now that India in Pixels is no longer making bar chart racing videos (and has shifted to more narration like styles), it feels to give the code base back to the community so that some young creative nerd can make good use of it.
 
-If this codebase helps you in any form, you can support IIP via UPI: indiainpixels@paytm if you are in India or Patreon at [Patreon](patreon.com/indiainpixels) if you are overseas
+If this codebase helps you in any form, you can support IIP via UPI: indiainpixels@paytm if you are in India or Patreon at [Patreon](https://patreon.com/indiainpixels) if you are overseas
 
 ## LICENSE
 
